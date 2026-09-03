@@ -1,0 +1,138 @@
+    <!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VKU Field Survey PWA</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#6c5ce7">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
+        body { background-color: #0f172a; color: #f1f5f9; padding: 20px; display: flex; justify-content: center; min-height: 100vh; }
+        .container { width: 100%; max-width: 600px; background: #1e293b; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); }
+        h1 { font-size: 1.8rem; color: #6c5ce7; margin-bottom: 5px; text-align: center; }
+        p.subtitle { text-align: center; color: #94a3b8; font-size: 0.9rem; margin-bottom: 25px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 500; font-size: 0.95rem; }
+        input, select, textarea { width: 100%; padding: 12px; background: #0f172a; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; font-size: 1rem; outline: none; }
+        input:focus, select:focus, textarea:focus { border-color: #6c5ce7; }
+        button { width: 100%; padding: 14px; background: #6c5ce7; color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 15px rgba(108,92,231,0.4); }
+        button:hover { opacity: 0.9; transform: translateY(-2px); }
+        .status-badge { display: inline-block; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; margin-bottom: 20px; }
+        .online { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+        .offline { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+        .history { margin-top: 30px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px; }
+        .history h3 { font-size: 1.1rem; margin-bottom: 10px; color: #a29bfe; }
+        .history-item { background: #0f172a; padding: 10px 15px; border-radius: 6px; margin-bottom: 8px; font-size: 0.85rem; color: #94a3b8; border-left: 3px solid #6c5ce7; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>VKU Field Survey</h1>
+    <p class="subtitle">Hệ thống khảo sát cơ sở vật chất thông minh (Offline-first)</p>
+    
+    <div style="text-align: center;">
+        <span id="netStatus" class="status-badge online">🟢 Trạng thái: Đang kết nối mạng</span>
+    </div>
+
+    <form id="surveyForm">
+        <div class="form-group">
+            <label>Mã số sinh viên / Giảng viên</label>
+            <input type="text" id="userId" placeholder="Ví dụ: 23IT140" required>
+        </div>
+        <div class="form-group">
+            <label>Khu vực / Phòng học</label>
+            <select id="room">
+                <option value="Phòng Lab A1">Phòng Lab A1</option>
+                <option value="Phòng Lab A2">Phòng Lab A2</option>
+                <option value="Giảng đường B3">Giảng đường B3</option>
+                <option value="Khu tự học C">Khu tự học C</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Tình trạng thiết bị</label>
+            <select id="status">
+                <option value="Tốt / Hoạt động bình thường">Tốt / Hoạt động bình thường</option>
+                <option value="Hư hỏng nhẹ (Cần bảo trì)">Hư hỏng nhẹ (Cần bảo trì)</option>
+                <option value="Hư hỏng nặng (Không sử dụng được)">Hư hỏng nặng (Không sử dụng được)</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Ghi chú chi tiết sự cố</label>
+            <textarea id="notes" rows="3" placeholder="Mô tả chi tiết thiết bị hỏng..."></textarea>
+        </div>
+        <button type="submit">Gửi Khảo Sát</button>
+    </form>
+
+    <div class="history">
+        <h3>Dữ liệu đã lưu cục bộ (Offline Storage)</h3>
+        <div id="historyList"><p style="font-size: 0.85rem; color: #64748b;">Chưa có bản ghi nào.</p></div>
+    </div>
+</div>
+
+<script>
+    // Đăng ký Service Worker cho PWA
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js')
+            .then(() => console.log('Service Worker Registered!'))
+            .catch((err) => console.log('SW registration failed:', err));
+    }
+
+    // Xử lý kiểm tra mạng Online/Offline
+    const statusBadge = document.getElementById('netStatus');
+    function updateNetworkStatus() {
+        if (navigator.onLine) {
+            statusBadge.className = 'status-badge online';
+            statusBadge.innerText = '🟢 Trạng thái: Trực tuyến (Online)';
+        } else {
+            statusBadge.className = 'status-badge offline';
+            statusBadge.innerText = '🔴 Trạng thái: Ngoại tuyến (Offline Mode)';
+        }
+    }
+    window.addEventListener('online', updateNetworkStatus);
+    window.addEventListener('offline', updateNetworkStatus);
+    updateNetworkStatus();
+
+    // Lưu trữ dữ liệu Offline với LocalStorage
+    const form = document.getElementById('surveyForm');
+    const historyList = document.getElementById('historyList');
+
+    function loadHistory() {
+        const data = JSON.parse(localStorage.getItem('vku_surveys') || '[]');
+        if (data.length === 0) {
+            historyList.innerHTML = '<p style="font-size: 0.85rem; color: #64748b;">Chưa có bản ghi nào.</p>';
+            return;
+        }
+        historyList.innerHTML = data.map(item => `
+            <div class="history-item">
+                <strong>[${item.room}]</strong> - ${item.status}<br>
+                <span>${item.notes}</span> <br><small style="color: #64748b;">Bởi: ${item.userId} lúc ${item.time}</small>
+            </div>
+        `).join('');
+    }
+
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const newRecord = {
+            userId: document.getElementById('userId').value,
+            room: document.getElementById('room').value,
+            status: document.getElementById('status').value,
+            notes: document.getElementById('notes').value,
+            time: new Date().toLocaleString('vi-VN')
+        };
+
+        const data = JSON.parse(localStorage.getItem('vku_surveys') || '[]');
+        data.unshift(newRecord);
+        localStorage.setItem('vku_surveys', JSON.stringify(data));
+
+        alert('Đã lưu dữ liệu thành công (Hệ thống hoạt động tốt cả khi ngoại tuyến)!');
+        form.reset();
+        loadHistory();
+    });
+
+    loadHistory();
+</script>
+</body>
+</html>
