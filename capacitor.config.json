@@ -1,0 +1,6 @@
+{
+  "appId": "com.vku.survey",
+  "appName": "VKU Survey",
+  "webDir": "www",
+  "bundledWebRuntime": false
+}

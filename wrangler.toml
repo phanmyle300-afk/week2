@@ -1,0 +1,8 @@
+name = "week2"
+main = "src/index.js"
+compatibility_date = "2026-03-03"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "vku-survey-db"
+database_id = "c2a1fe96-6e31-47cc-9fef-6174eb3624f9"
